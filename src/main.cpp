@@ -23,7 +23,7 @@ const option::Descriptor usage[] = {
     {UNKNOWN, 0, "",      "",      option::Arg::None,     "\nExamples:"
                                                           "\n  jwtgen --iss=glitchedpolygons --copy"
                                                           "\n  jwtgen --iss=otherIssuerName --claim=role:admin --claim=projectId:7"
-                                                          "\n  jwtgen -iglitchedtime --exp=1587399600"},
+                                                          "\n  jwtgen -iglitchedtime -c --exp=1587399600"},
 
     {0,       0, nullptr, nullptr, nullptr,               nullptr}
 };
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
     using option::Parser;
 
     Stats stats(usage, argc, argv);
-    Option options[128], buffer[4096];
+    Option options[stats.options_max], buffer[stats.buffer_max];
     Parser parser(usage, argc, argv, options, buffer);
 
     if (parser.error())
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
             cout << "ERROR: Invalid claim argument \"" << claim << "\" - claim name or claim value is an empty string. Please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces!";
             continue;
         }
-        
+
         token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
     }
 

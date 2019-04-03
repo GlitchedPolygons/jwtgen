@@ -14,7 +14,13 @@ enum optionIndex
     EXP,
     IAT,
     NBF,
-    CLAIM
+    CLAIM,
+    HS256,
+    HS384,
+    HS512,
+    RS256,
+    RS384,
+    RS512
 };
 
 const option::Descriptor usage[] = {
@@ -27,7 +33,13 @@ const option::Descriptor usage[] = {
     {EXP,     0, "",      "exp",   option::Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC (according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4). You can use https://unixtimestamp.com to your advantage."},
     {IAT,     0, "",      "iat",   option::Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
     {NBF,     0, "",      "nbf",   option::Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
-    {CLAIM,   0, "",      "claim", option::Arg::Optional, "  --claim    \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
+    {CLAIM,   0, "",      "claim", option::Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
+    {HS256,   0, "",      "hs256", option::Arg::Optional, "  --hs256 \tSecret string to use for signing the token (HMACSHA256 algorithm)."},
+    {HS384,   0, "",      "hs384", option::Arg::Optional, "  --hs384 \tSecret string to use for signing the token (HMACSHA384 algorithm)."},
+    {HS512,   0, "",      "hs512", option::Arg::Optional, "  --hs512 \tSecret string to use for signing the token (HMACSHA512 algorithm)."},
+    {RS256,   0, "",      "rs256", option::Arg::Optional, "  --rs256 \tFile path to the private RSA key used for signing the token (RSASHA256 algorithm; file must be a text file containing the private key in PEM format)"},
+    {RS384,   0, "",      "rs384", option::Arg::Optional, "  --rs384 \tFile path to the private RSA key used for signing the token (RSASHA384 algorithm; file must be a text file containing the private key in PEM format)"},
+    {RS512,   0, "",      "rs512", option::Arg::Optional, "  --rs512 \tFile path to the private RSA key used for signing the token (RSASHA512 algorithm; file must be a text file containing the private key in PEM format)"},
     {UNKNOWN, 0, "",      "",      option::Arg::None,     "\nExamples:"
                                                           "\n  jwtgen --iss=glitchedpolygons --copy"
                                                           "\n  jwtgen --iss=otherIssuerName --claim=role:admin --claim=projectId:7"
@@ -207,6 +219,7 @@ int main(int argc, char** argv)
         token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
     }
 
+    // TODO: implement signing here
     const string& output = token.sign(jwt::algorithm::hs256 {"secret"});
     cout << endl << output;
 

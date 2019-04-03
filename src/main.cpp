@@ -10,6 +10,7 @@ enum optionIndex
     COPY,
     ISS,
     SUB,
+    AUD,
     EXP,
     IAT,
     NBF,
@@ -22,6 +23,7 @@ const option::Descriptor usage[] = {
     {COPY,    0, "c",     "copy",  option::Arg::Optional, "  -c, --copy  \tCopy generated token to clipboard automatically."},
     {ISS,     0, "i",     "iss",   option::Arg::Optional, "  -i, --iss  \tThe issuer name of the jwt."},
     {SUB,     0, "s",     "sub",   option::Arg::Optional, "  -s, --sub  \tThe jwt's sub claim (usually whom this token refers to)."},
+    {AUD,     0, "a",     "aud",   option::Arg::Optional, "  -a, --aud  \tThe jwt's intended audience (recipients). Should represent who or what this token is intended for. Optional, according to RFC7519."},
     {EXP,     0, "",      "exp",   option::Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC (according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4). You can use https://unixtimestamp.com to your advantage."},
     {IAT,     0, "",      "iat",   option::Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
     {NBF,     0, "",      "nbf",   option::Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
@@ -130,6 +132,17 @@ int main(int argc, char** argv)
             return 2;
         }
         token.set_subject(sub->arg);
+    }
+
+    const Option* aud = options[AUD];
+    if (aud != nullptr)
+    {
+        if (aud->count() > 1)
+        {
+            cout << "\nERROR: You passed more than one audience argument. Only one --aud per jwt is allowed!\n";
+            return 2;
+        }
+        token.set_audience(aud->arg);
     }
 
     const Option* exp = options[EXP];

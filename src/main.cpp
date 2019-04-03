@@ -33,25 +33,33 @@ using std::endl;
 using std::vector;
 using std::string;
 
+/**
+ * Splits a string using a delimiter character (e.g. comma-separated values) and returns a vector of the found substrings.
+ * @param inputString The string to split.
+ * @param delimiter The delimiter character to use for splitting (e.g. ',' or ':' or whatever).
+ * @return std::vector of the found substrings.
+ */
 static vector<string> split(const string& inputString, char delimiter)
 {
     using std::istringstream;
-    string token;
-    vector<string> tokens;
-    istringstream tokenStream(inputString);
-    while (std::getline(tokenStream, token, delimiter))
+
+    string substring;
+    vector<string> substrings;
+    istringstream inputStringStream(inputString);
+
+    while (std::getline(inputStringStream, substring, delimiter))
     {
-        tokens.push_back(token);
+        substrings.push_back(substring);
     }
-    return tokens;
+
+    return substrings;
 }
 
 /**
  * Parses the passed jwt generation parameters and outputs the final token (in its encoded form ready for usage).<p>
- *
  * @param argc The amount of passed CLI arguments.
  * @param argv The passed program's CLI arguments.
- * @return 0 if generation was successful; 1 if the program arguments couldn't be parsed; 2 if you passed more than one issuer argument.
+ * @return 0 if generation was successful or the user asked for help; 1 if the program's arguments couldn't be parsed; 2 if you passed more than one issuer argument.
  */
 int main(int argc, char** argv)
 {
@@ -64,9 +72,9 @@ int main(int argc, char** argv)
 
     Stats stats(usage, argc, argv);
     Option options[128], buffer[4096];
-    Parser parse(usage, argc, argv, options, buffer);
+    Parser parser(usage, argc, argv, options, buffer);
 
-    if (parse.error())
+    if (parser.error())
     {
         cout << "\nERROR: Failed to parse jwtgen command line arguments.";
         return 1;
@@ -78,14 +86,14 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    for (Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+    for (const Option* opt = options[UNKNOWN]; opt; opt = opt->next())
     {
         cout << "Unknown option: " << opt->name << "\n";
     }
 
     jwt::builder token = jwt::create();
 
-    Option* iss = options[ISS];
+    const Option* iss = options[ISS];
     if (iss != nullptr)
     {
         if (iss->count() > 1)
@@ -96,27 +104,28 @@ int main(int argc, char** argv)
         token.set_issuer(iss->arg);
     }
 
-    for (Option* opt = options[CLAIM]; opt; opt = opt->next())
+    for (const Option* option = options[CLAIM]; option; option = option->next())
     {
-        const string& s(opt->arg);
-        if (s.empty())
+        const string& claim(option->arg);
+        if (claim.empty())
         {
+            cout << "WARNING: One or more claims were left empty (--claim= )";
             continue;
         }
-        const vector<string>& spl = split(s, ':');
-        if (spl.size() != 2)
+
+        const vector<string>& kvp = split(claim, ':');
+        if (kvp.size() != 2)
         {
-            cout << "ERROR: invalid claim argument \"" << s
-                 << "\" - please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces!";
+            cout << "ERROR: Invalid claim argument \"" << claim << "\" - please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces!";
             continue;
         }
-        if (spl[0].empty() || spl[1].empty())
+        if (kvp[0].empty() || kvp[1].empty())
         {
-            cout << "ERROR: invalid claim argument \"" << s
-                 << "\" - claim name or claim value is an empty string. Please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces!";
+            cout << "ERROR: Invalid claim argument \"" << claim << "\" - claim name or claim value is an empty string. Please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces!";
             continue;
         }
-        token.set_payload_claim(spl[0], jwt::claim(spl[1]));
+        
+        token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
     }
 
     const string& output = token.sign(jwt::algorithm::hs256 {"secret"});

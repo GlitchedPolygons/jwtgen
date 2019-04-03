@@ -1,9 +1,15 @@
-
 if (CYGWIN)
   set(EmbeddedOpenSSL_DIR ${CMAKE_SOURCE_DIR}/dependencies/openssl/cygwin-x86_64)
   find_library(
           EmbeddedOpenSSL_LIB
           NAMES crypto ssl
+          PATHS ${EmbeddedOpenSSL_DIR}/lib
+          NO_DEFAULT_PATH)
+elseif (WIN32)
+  set(EmbeddedOpenSSL_DIR ${CMAKE_SOURCE_DIR}/dependencies/openssl/windows-x86_64)
+  find_library(
+          EmbeddedOpenSSL_LIB
+          NAMES libcrypto libssl
           PATHS ${EmbeddedOpenSSL_DIR}/lib
           NO_DEFAULT_PATH)
 elseif (UNIX AND NOT APPLE)

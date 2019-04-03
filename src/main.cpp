@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   argv += (argc > 0); // skip program name argv[0] if present.
 
   option::Stats stats(usage, argc, argv);
-  option::Option options[stats.options_max], buffer[stats.buffer_max];
+  option::Option options[128], buffer[4096];
   option::Parser parse(usage, argc, argv, options, buffer);
 
   if (parse.error()) {

@@ -1,5 +1,6 @@
-#include <iostream>
+#include <fstream>
 #include <sstream>
+#include <iostream>
 #include "jwt-cpp/jwt.h"
 #include "optionparser.h"
 
@@ -10,6 +11,7 @@ enum optionIndex
     COPY,
     ALG,
     KEY,
+    PW,
     ISS,
     SUB,
     AUD,
@@ -34,11 +36,12 @@ const option::Descriptor usage[] = {
     {CLAIM,   0, "",      "claim", Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
     {ALG,     0, "",      "alg",   Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
     {KEY,     0, "k",     "key",   Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
+    {PW,      0, "p",     "pw",    Arg::Optional, "  -p, --pw  \tPassword for decrypting the RSA key (if the key requires one)."},
     {UNKNOWN, 0, "",      "",      Arg::None,     "\nExamples:"
                                                   "\n  jwtgen -iglitchedtime -c --exp=1587399600"
                                                   "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
                                                   "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
-                                                  "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem\n\n"
+                                                  "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem --pw=KeyDecryptionPassphrase123\n\n"
                                                   "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
 
     {0,       0, nullptr, nullptr, nullptr,       nullptr}
@@ -80,6 +83,23 @@ inline const static std::chrono::system_clock::time_point string_to_time_point(c
 {
     const long int s = std::strtol(str, nullptr, 10);
     return std::chrono::system_clock::from_time_t(std::abs(s));
+}
+
+/**
+ * Reads a file's string content.
+ * @param path The file path.
+ * @return The file's text content if everything was successful; an empty string if the file does not exist or couldn't be read;
+ */
+inline const static string read_file_as_text(const string& path)
+{
+    std::ifstream fs(path);
+    if (!fs.good())
+    {
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << fs.rdbuf();
+    return buffer.str();
 }
 
 /**
@@ -234,6 +254,7 @@ int main(int argc, char** argv)
     const Option* key = options[KEY];
     if (key == nullptr || key->arg == nullptr)
     {
+        cout << "WARNING: No signing key specified; encoding jwt without signing it. Are you sure that this is what you want?";
         finalize(token.sign(jwt::algorithm::none()), options[COPY]);
         return 0;
     }
@@ -246,6 +267,60 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    // TODO: implement the rest of the signing functionality here
+    string alg_name(alg->arg);
+    for (char& c : alg_name)
+    {
+        c = toupper(c);
+    }
+
+    if (alg_name.empty())
+    {
+        cout << "ERROR: The passed algorithm name argument is empty.";
+        return 2;
+    }
+
+    string output;
+    if (alg_name == "HS256")
+    {
+        output = token.sign(jwt::algorithm::hs256 {key->arg});
+    }
+    else if (alg_name == "HS384")
+    {
+        output = token.sign(jwt::algorithm::hs384 {key->arg});
+    }
+    else if (alg_name == "HS512")
+    {
+        output = token.sign(jwt::algorithm::hs512 {key->arg});
+    }
+    else
+    {
+        const string& pem = read_file_as_text(key->arg);
+        if (pem.empty())
+        {
+            cout << "ERROR: The specified signing key file does not exist or couldn't be read.";
+            return 2;
+        }
+
+        if (alg_name == "RS256")
+        {
+            output = token.sign(jwt::algorithm::rs256("", pem, "", __KEY_PW__));
+        }
+        else if (alg_name == "RS384")
+        {
+            output = token.sign(jwt::algorithm::rs384("", pem, "", __KEY_PW__));
+        }
+        else if (alg_name == "RS512")
+        {
+            output = token.sign(jwt::algorithm::rs512("", pem, "", __KEY_PW__));
+        }
+        else
+        {
+            cout << "ERROR: The passed algorithm type \"" << alg_name << "\"is not valid";
+            return 2;
+        }
+    }
+
+    finalize(output, options[COPY]);
+    return 0;
 }
 

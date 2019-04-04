@@ -19,27 +19,29 @@ enum optionIndex
     CLAIM,
 };
 
-const option::Descriptor usage[] = {
-    {UNKNOWN, 0, "",      "",      option::Arg::None,     "\nUsage:  \tjwtgen [options]\n\n" "Options:"},
-    {HELP,    0, "h",     "help",  option::Arg::Optional, "  -h, --help  \tPrint usage and exit."},
-    {COPY,    0, "c",     "copy",  option::Arg::Optional, "  -c, --copy  \tCopy generated token to clipboard automatically."},
-    {ISS,     0, "i",     "iss",   option::Arg::Optional, "  -i, --iss  \tThe issuer name of the jwt."},
-    {SUB,     0, "s",     "sub",   option::Arg::Optional, "  -s, --sub  \tThe jwt's sub claim (usually whom this token refers to)."},
-    {AUD,     0, "a",     "aud",   option::Arg::Optional, "  -a, --aud  \tThe jwt's intended audience (recipients). Should represent who or what this token is intended for. Optional, according to RFC7519."},
-    {EXP,     0, "",      "exp",   option::Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC (according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4). You can use https://unixtimestamp.com to your advantage."},
-    {IAT,     0, "",      "iat",   option::Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
-    {NBF,     0, "",      "nbf",   option::Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
-    {CLAIM,   0, "",      "claim", option::Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
-    {ALG,     0, "",      "alg",   option::Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
-    {KEY,     0, "k",     "key",   option::Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
-    {UNKNOWN, 0, "",      "",      option::Arg::None,     "\nExamples:"
-                                                          "\n  jwtgen -iglitchedtime -c --exp=1587399600"
-                                                          "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
-                                                          "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
-                                                          "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem\n\n"
-                                                          "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
+using option::Arg;
 
-    {0,       0, nullptr, nullptr, nullptr,               nullptr}
+const option::Descriptor usage[] = {
+    {UNKNOWN, 0, "",      "",      Arg::None,     "\nUsage:  \tjwtgen [options]\n\n" "Options:"},
+    {HELP,    0, "h",     "help",  Arg::Optional, "  -h, --help  \tPrint usage and exit."},
+    {COPY,    0, "c",     "copy",  Arg::Optional, "  -c, --copy  \tCopy generated token to clipboard automatically."},
+    {ISS,     0, "i",     "iss",   Arg::Optional, "  -i, --iss  \tThe jwt's issuer (name of who created/signed this token)."},
+    {SUB,     0, "s",     "sub",   Arg::Optional, "  -s, --sub  \tThe jwt's sub claim (usually whom this token refers to)."},
+    {AUD,     0, "a",     "aud",   Arg::Optional, "  -a, --aud  \tThe jwt's intended audience (recipients). Should represent who or what this token is intended for. Optional, according to RFC7519."},
+    {EXP,     0, "",      "exp",   Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4. You can use https://unixtimestamp.com to your advantage."},
+    {IAT,     0, "",      "iat",   Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
+    {NBF,     0, "",      "nbf",   Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
+    {CLAIM,   0, "",      "claim", Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
+    {ALG,     0, "",      "alg",   Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
+    {KEY,     0, "k",     "key",   Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
+    {UNKNOWN, 0, "",      "",      Arg::None,     "\nExamples:"
+                                                  "\n  jwtgen -iglitchedtime -c --exp=1587399600"
+                                                  "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
+                                                  "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
+                                                  "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem\n\n"
+                                                  "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
+
+    {0,       0, nullptr, nullptr, nullptr,       nullptr}
 };
 
 using std::cout;

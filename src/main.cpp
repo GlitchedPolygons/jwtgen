@@ -8,6 +8,8 @@ enum optionIndex
     UNKNOWN,
     HELP,
     COPY,
+    ALG,
+    KEY,
     ISS,
     SUB,
     AUD,
@@ -15,12 +17,6 @@ enum optionIndex
     IAT,
     NBF,
     CLAIM,
-    HS256,
-    HS384,
-    HS512,
-    RS256,
-    RS384,
-    RS512
 };
 
 const option::Descriptor usage[] = {
@@ -34,16 +30,14 @@ const option::Descriptor usage[] = {
     {IAT,     0, "",      "iat",   option::Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
     {NBF,     0, "",      "nbf",   option::Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
     {CLAIM,   0, "",      "claim", option::Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
-    {HS256,   0, "",      "hs256", option::Arg::Optional, "  --hs256 \tSecret string to use for signing the token (HMACSHA256 algorithm)."},
-    {HS384,   0, "",      "hs384", option::Arg::Optional, "  --hs384 \tSecret string to use for signing the token (HMACSHA384 algorithm)."},
-    {HS512,   0, "",      "hs512", option::Arg::Optional, "  --hs512 \tSecret string to use for signing the token (HMACSHA512 algorithm)."},
-    {RS256,   0, "",      "rs256", option::Arg::Optional, "  --rs256 \tFile path to the private RSA key used for signing the token (RSASHA256 algorithm; file must be a text file containing the private key in PEM format)"},
-    {RS384,   0, "",      "rs384", option::Arg::Optional, "  --rs384 \tFile path to the private RSA key used for signing the token (RSASHA384 algorithm; file must be a text file containing the private key in PEM format)"},
-    {RS512,   0, "",      "rs512", option::Arg::Optional, "  --rs512 \tFile path to the private RSA key used for signing the token (RSASHA512 algorithm; file must be a text file containing the private key in PEM format)"},
+    {ALG,     0, "",      "alg",   option::Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
+    {KEY,     0, "k",     "key",   option::Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
     {UNKNOWN, 0, "",      "",      option::Arg::None,     "\nExamples:"
-                                                          "\n  jwtgen --iss=glitchedpolygons --copy"
-                                                          "\n  jwtgen --iss=otherIssuerName --claim=role:admin --claim=projectId:7"
-                                                          "\n  jwtgen -iglitchedtime -c --exp=1587399600\n\nFully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
+                                                          "\n  jwtgen -iglitchedtime -c --exp=1587399600"
+                                                          "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
+                                                          "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
+                                                          "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem\n\n"
+                                                          "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
 
     {0,       0, nullptr, nullptr, nullptr,               nullptr}
 };
@@ -59,7 +53,7 @@ using std::string;
  * @param delimiter The delimiter character to use for splitting (e.g. ',' or ':' or whatever).
  * @return std::vector of the found substrings.
  */
-static vector<string> split(const string& inputString, char delimiter)
+static const vector<string> split(const string& inputString, char delimiter)
 {
     using std::istringstream;
 
@@ -80,10 +74,26 @@ static vector<string> split(const string& inputString, char delimiter)
  * @param str The unix time string (seconds since 1970-01-01T00:00:00Z) to convert.
  * @return The converted time_point.
  */
-inline static std::chrono::system_clock::time_point string_to_time_point(const char* str)
+inline const static std::chrono::system_clock::time_point string_to_time_point(const char* str)
 {
     const long int s = std::strtol(str, nullptr, 10);
     return std::chrono::system_clock::from_time_t(std::abs(s));
+}
+
+/**
+ * Finalizes the jwt generation procedure by printing out the
+ * generated token to the console and eventually copying it to the clipboard.
+ * @param jwt The generated jwt.
+ * @param copy Should the generated jwt also be copied to the clipboard?
+ */
+const void finalize(const string& jwt, const bool& copy)
+{
+    cout << endl << jwt << endl;
+
+    if (copy)
+    {
+        // TODO: copy the jwt to the clipboard here
+    }
 }
 
 /**
@@ -219,15 +229,21 @@ int main(int argc, char** argv)
         token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
     }
 
-    // TODO: implement signing here
-    const string& output = token.sign(jwt::algorithm::hs256 {"secret"});
-    cout << endl << output;
-
-    if (options[COPY])
+    const Option* key = options[KEY];
+    if (key == nullptr || key->arg == nullptr)
     {
-        // TODO: copy the jwt to the clipboard here
+        finalize(token.sign(jwt::algorithm::none()), options[COPY]);
+        return 0;
     }
 
-    return 0;
+    const Option* alg = options[ALG];
+    if (alg == nullptr)
+    {
+        cout << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.";
+        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), options[COPY]);
+        return 0;
+    }
+
+    // TODO: implement the rest of the signing functionality here
 }
 

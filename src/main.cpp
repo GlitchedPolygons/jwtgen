@@ -351,7 +351,7 @@ int main(int argc, char** argv)
 
     if (pem.empty())
     {
-        cout << "ERROR: The specified signing key file does not exist or couldn't be read.";
+        cout << "ERROR: The specified signing key file does not exist or couldn't be read: " << key->arg;
         return 2;
     }
 

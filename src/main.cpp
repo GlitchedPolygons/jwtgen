@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <openssl/rsa.h>
 #include "jwt-cpp/jwt.h"
 #include "optionparser.h"
 
@@ -102,6 +103,28 @@ inline const static string read_file_as_text(const string& path)
     return buffer.str();
 }
 
+inline const static string extract_pub_key_from_private_pem(const string& pem)
+{
+    BIO* bio = BIO_new(BIO_s_mem());
+    BIO_write(bio, pem.c_str(), pem.size());
+
+    EVP_PKEY* pkey = nullptr;
+    PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);
+
+    char* tmp_path = std::tmpnam(nullptr);
+    FILE* tmp_file = fopen(tmp_path,"wb");
+
+    PEM_write_PUBKEY(tmp_file, pkey);
+
+    std::fclose(tmp_file);
+    string out = read_file_as_text(tmp_path);
+    
+    remove(tmp_path);
+    BIO_free(bio);
+    EVP_PKEY_free(pkey);
+    return out;
+}
+
 /**
  * Finalizes the jwt generation procedure by printing out the
  * generated token to the console and eventually copying it to the clipboard.
@@ -111,7 +134,6 @@ inline const static string read_file_as_text(const string& path)
 const void finalize(const string& jwt, const bool& copy)
 {
     cout << endl << jwt << endl;
-
     if (copy)
     {
         // TODO: copy the jwt to the clipboard here
@@ -251,19 +273,22 @@ int main(int argc, char** argv)
         token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
     }
 
+    const bool& copy = options[COPY];
     const Option* key = options[KEY];
+
     if (key == nullptr || key->arg == nullptr)
     {
         cout << "WARNING: No signing key specified; encoding jwt without signing it. Are you sure that this is what you want?";
-        finalize(token.sign(jwt::algorithm::none()), options[COPY]);
+        finalize(token.sign(jwt::algorithm::none()), copy);
         return 0;
     }
 
     const Option* alg = options[ALG];
     if (alg == nullptr)
     {
-        cout << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.";
-        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), options[COPY]);
+        cout
+            << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.\nIf you passed an RSA key file path into the key argument: please also specify the algorithm to use (otherwise the path string itself is used as a secret for the HS256 algo).";
+        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), copy);
         return 0;
     }
 
@@ -272,55 +297,69 @@ int main(int argc, char** argv)
     {
         c = toupper(c);
     }
-
     if (alg_name.empty())
     {
         cout << "ERROR: The passed algorithm name argument is empty.";
         return 2;
     }
 
-    string output;
     if (alg_name == "HS256")
     {
-        output = token.sign(jwt::algorithm::hs256 {key->arg});
-    }
-    else if (alg_name == "HS384")
-    {
-        output = token.sign(jwt::algorithm::hs384 {key->arg});
-    }
-    else if (alg_name == "HS512")
-    {
-        output = token.sign(jwt::algorithm::hs512 {key->arg});
-    }
-    else
-    {
-        const string& pem = read_file_as_text(key->arg);
-        if (pem.empty())
-        {
-            cout << "ERROR: The specified signing key file does not exist or couldn't be read.";
-            return 2;
-        }
-
-        if (alg_name == "RS256")
-        {
-            output = token.sign(jwt::algorithm::rs256("", pem, "", __KEY_PW__));
-        }
-        else if (alg_name == "RS384")
-        {
-            output = token.sign(jwt::algorithm::rs384("", pem, "", __KEY_PW__));
-        }
-        else if (alg_name == "RS512")
-        {
-            output = token.sign(jwt::algorithm::rs512("", pem, "", __KEY_PW__));
-        }
-        else
-        {
-            cout << "ERROR: The passed algorithm type \"" << alg_name << "\"is not valid";
-            return 2;
-        }
+        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), copy);
+        return 0;
     }
 
-    finalize(output, options[COPY]);
-    return 0;
+    if (alg_name == "HS384")
+    {
+        finalize(token.sign(jwt::algorithm::hs384 {key->arg}), copy);
+        return 0;
+    }
+
+    if (alg_name == "HS512")
+    {
+        finalize(token.sign(jwt::algorithm::hs512 {key->arg}), copy);
+        return 0;
+    }
+
+    const string& pem = read_file_as_text(key->arg);
+    const Option* pw = options[PW];
+    string pw_str;
+
+    if (pw != nullptr)
+    {
+        if (pw->count() > 1)
+        {
+            cout << "\nERROR: You passed more than one RSA key password. Only one --pw argument per jwt is allowed!\n";
+            return 2;
+        }
+        pw_str = string(pw->arg);
+    }
+
+    if (pem.empty())
+    {
+        cout << "ERROR: The specified signing key file does not exist or couldn't be read.";
+        return 2;
+    }
+
+    if (alg_name == "RS256")
+    {
+        finalize(token.sign(jwt::algorithm::rs256(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+        return 0;
+    }
+
+    if (alg_name == "RS384")
+    {
+        finalize(token.sign(jwt::algorithm::rs384(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+        return 0;
+    }
+
+    if (alg_name == "RS512")
+    {
+        finalize(token.sign(jwt::algorithm::rs512(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+        return 0;
+    }
+
+    cout << "ERROR: The passed algorithm type \"" << alg_name << "\"is not valid";
+    return 2;
 }
 

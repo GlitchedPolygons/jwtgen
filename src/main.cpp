@@ -103,22 +103,37 @@ inline const static string read_file_as_text(const string& path)
     return buffer.str();
 }
 
+/**
+ * Given a private key in PEM string format, this function returns its public key (also as a PEM-formatted string).
+ * @param pem Private key PEM string
+ * @return The PEM-formatted public key string; an empty string if conversion failed in some way.
+ */
 inline const static string extract_pub_key_from_private_pem(const string& pem)
 {
+    if (pem.empty())
+    {
+        return "";
+    }
+
     BIO* bio = BIO_new(BIO_s_mem());
     BIO_write(bio, pem.c_str(), pem.size());
 
     EVP_PKEY* pkey = nullptr;
     PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);
 
+    if (pkey == nullptr)
+    {
+        return "";
+    }
+
     char* tmp_path = std::tmpnam(nullptr);
-    FILE* tmp_file = fopen(tmp_path,"wb");
+    FILE* tmp_file = fopen(tmp_path, "wb");
 
     PEM_write_PUBKEY(tmp_file, pkey);
 
     std::fclose(tmp_file);
     string out = read_file_as_text(tmp_path);
-    
+
     remove(tmp_path);
     BIO_free(bio);
     EVP_PKEY_free(pkey);
@@ -286,8 +301,7 @@ int main(int argc, char** argv)
     const Option* alg = options[ALG];
     if (alg == nullptr)
     {
-        cout
-            << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.\nIf you passed an RSA key file path into the key argument: please also specify the algorithm to use (otherwise the path string itself is used as a secret for the HS256 algo).";
+        cout << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.\nIf you passed an RSA key file path into the key argument: please also specify the algorithm to use (otherwise the path string itself is used as a secret for the HS256 algo).";
         finalize(token.sign(jwt::algorithm::hs256 {key->arg}), copy);
         return 0;
     }

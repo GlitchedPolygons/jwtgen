@@ -13,6 +13,10 @@ find_library(
         NAMES clipboard libclipboard
         PATHS ${EmbeddedClipboard_DIR})
 
-message(FindEmbeddedClipboard.cmake:\ Found\ libclipboard\ Path:\ ${EmbeddedClipboard_LIB})
+if (EmbeddedClipboard_LIB)
+  message(FindEmbeddedClipboard.cmake:\ Found\ libclipboard\ Path:\ ${EmbeddedClipboard_LIB})
+else ()
+  message("ERROR: Couldn't find libclipboard library dependency!")
+endif ()
 
 set(EmbeddedClipboard_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/dependencies/libclipboard)

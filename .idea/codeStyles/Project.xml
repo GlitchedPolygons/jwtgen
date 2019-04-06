@@ -1,6 +1,6 @@
 <component name="ProjectCodeStyleConfiguration">
   <code_scheme name="Project" version="173">
-    <option name="RIGHT_MARGIN" value="300" />
+    <option name="RIGHT_MARGIN" value="1000" />
     <CMakeCodeStyleSettings>
       <option name="FORCE_COMMANDS_CASE" value="1" />
     </CMakeCodeStyleSettings>

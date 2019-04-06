@@ -3,6 +3,7 @@
 #include <iostream>
 #include <openssl/rsa.h>
 #include "jwt-cpp/jwt.h"
+#include "libclipboard.h"
 #include "optionparser.h"
 
 enum optionIndex
@@ -151,7 +152,10 @@ const void finalize(const string& jwt, const bool& copy)
     cout << endl << jwt << endl;
     if (copy)
     {
-        // TODO: copy the jwt to the clipboard here
+        clipboard_c* c = clipboard_new(nullptr);
+        clipboard_clear(c, clipboard_mode::LCB_CLIPBOARD);
+        clipboard_set_text(c, jwt.c_str());
+        clipboard_free(c);
     }
 }
 

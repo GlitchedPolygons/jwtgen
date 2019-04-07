@@ -3,50 +3,50 @@
 #include <iostream>
 #include <openssl/rsa.h>
 #include "jwt-cpp/jwt.h"
-#include "libclipboard.h"
+#include "clip.h"
 #include "optionparser.h"
 
 enum optionIndex
 {
-    UNKNOWN,
-    HELP,
-    COPY,
-    ALG,
-    KEY,
-    PW,
-    ISS,
-    SUB,
-    AUD,
-    EXP,
-    IAT,
-    NBF,
-    CLAIM,
+	UNKNOWN,
+	HELP,
+	COPY,
+	ALG,
+	KEY,
+	PW,
+	ISS,
+	SUB,
+	AUD,
+	EXP,
+	IAT,
+	NBF,
+	CLAIM,
 };
 
 using option::Arg;
 
 const option::Descriptor usage[] = {
-    {UNKNOWN, 0, "",      "",      Arg::None,     "\nUsage:  \tjwtgen [options]\n\n" "Options:"},
-    {HELP,    0, "h",     "help",  Arg::Optional, "  -h, --help  \tPrint usage and exit."},
-    {COPY,    0, "c",     "copy",  Arg::Optional, "  -c, --copy  \tCopy generated token to clipboard automatically."},
-    {ISS,     0, "i",     "iss",   Arg::Optional, "  -i, --iss  \tThe jwt's issuer (name of who created/signed this token)."},
-    {SUB,     0, "s",     "sub",   Arg::Optional, "  -s, --sub  \tThe jwt's sub claim (usually whom this token refers to)."},
-    {AUD,     0, "a",     "aud",   Arg::Optional, "  -a, --aud  \tThe jwt's intended audience (recipients). Should represent who or what this token is intended for. Optional, according to RFC7519."},
-    {EXP,     0, "",      "exp",   Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4. You can use https://unixtimestamp.com to your advantage."},
-    {IAT,     0, "",      "iat",   Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
-    {NBF,     0, "",      "nbf",   Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
-    {CLAIM,   0, "",      "claim", Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
-    {ALG,     0, "",      "alg",   Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
-    {KEY,     0, "k",     "key",   Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
-    {PW,      0, "p",     "pw",    Arg::Optional, "  -p, --pw  \tPassword for decrypting the RSA key (if the key requires one)."},
-    {UNKNOWN, 0, "",      "",      Arg::None,     "\nExamples:"
-                                                  "\n  jwtgen -iglitchedtime -c --exp=1587399600"
-                                                  "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
-                                                  "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
-                                                  "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem --pw=KeyDecryptionPassphrase123\n\n"
-                                                  "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
+	{UNKNOWN, 0, "",      "",      Arg::None,     "\nUsage:  \tjwtgen [options]\n\n" "Options:"},
+	{HELP,    0, "h",     "help",  Arg::Optional, "  -h, --help  \tPrint usage and exit."},
+	{COPY,    0, "c",     "copy",  Arg::Optional, "  -c, --copy  \tCopy generated token to clipboard automatically."},
+	{ISS,     0, "i",     "iss",   Arg::Optional, "  -i, --iss  \tThe jwt's issuer (name of who created/signed this token)."},
+	{SUB,     0, "s",     "sub",   Arg::Optional, "  -s, --sub  \tThe jwt's sub claim (usually whom this token refers to)."},
+	{AUD,     0, "a",     "aud",   Arg::Optional, "  -a, --aud  \tThe jwt's intended audience (recipients). Should represent who or what this token is intended for. Optional, according to RFC7519."},
+	{EXP,     0, "",      "exp",   Arg::Optional, "  --exp  \tThe jwt's expiration date in numeric date format, meaning the amount of SECONDS SINCE 1970-01-01T00:00:00Z UTC according to RFC7519 standard https://tools.ietf.org/html/rfc7519#section-4.1.4. You can use https://unixtimestamp.com to your advantage."},
+	{IAT,     0, "",      "iat",   Arg::Optional, "  --iat  \tThe numeric date format of when this token was issued. If you don't pass this argument, it defaults to the current time in UTC."},
+	{NBF,     0, "",      "nbf",   Arg::Optional, "  --nbf  \tDatetime of when the jwt starts being valid (in numeric date format, just as in the --exp argument)."},
+	{CLAIM,   0, "",      "claim", Arg::Optional, "  --claim \tPut as many claims in as you need. Specify them with the syntax \"--claim=CLAIM_NAME:CLAIM_VALUE\" (without quotation marks)."},
+	{ALG,     0, "",      "alg",   Arg::Optional, "  --alg \tThe algorithm to use for signing the token. Can be HS256, HS384, HS512, RS256, RS384 or RS512."},
+	{KEY,     0, "k",     "key",   Arg::Optional, "  -k, --key \tThe secret string to use for signing the token (when selected an HMACSHA algo) __OR__ the file path to the private RSA key used for signing the token (for RSASHA algorithms) - the file must be a text file containing the private key in PEM format. If omitted, the token won't be signed at all (the --alg argument is ignored in that case)."},
+	{PW,      0, "p",     "pw",    Arg::Optional, "  -p, --pw  \tPassword for decrypting the RSA key (if the key requires one)."},
+	{UNKNOWN, 0, "",      "",      Arg::None,     "\nExamples:"
+												  "\n  jwtgen -iglitchedtime -c --exp=1587399600"
+												  "\n  jwtgen --iss=glitchedpolygons --copy -kSecretSigningKey"
+												  "\n  jwtgen --iss=glitchedpolygons --copy --key=SecretSigningKey --alg=hs512"
+												  "\n  jwtgen --iss=otherIssuerName --nbf=1587399600 --claim=role:admin --claim=projectId:7 --alg=rs256 --key=/home/username/private-key.pem --pw=KeyDecryptionPassphrase123\n\n"
+												  "Fully qualified arguments (double-dash) need to have the equals sign '=' between them and their values."},
 
-    {0,       0, nullptr, nullptr, nullptr,       nullptr}
+	{0,       0, nullptr, nullptr, nullptr,       nullptr}
 };
 
 using std::cout;
@@ -62,18 +62,18 @@ using std::string;
  */
 static const vector<string> split(const string& inputString, char delimiter)
 {
-    using std::istringstream;
+	using std::istringstream;
 
-    string substring;
-    vector<string> substrings;
-    istringstream inputStringStream(inputString);
+	string substring;
+	vector<string> substrings;
+	istringstream inputStringStream(inputString);
 
-    while (std::getline(inputStringStream, substring, delimiter))
-    {
-        substrings.push_back(substring);
-    }
+	while (std::getline(inputStringStream, substring, delimiter))
+	{
+		substrings.push_back(substring);
+	}
 
-    return substrings;
+	return substrings;
 }
 
 /**
@@ -83,8 +83,8 @@ static const vector<string> split(const string& inputString, char delimiter)
  */
 inline const static std::chrono::system_clock::time_point string_to_time_point(const char* str)
 {
-    const long int s = std::strtol(str, nullptr, 10);
-    return std::chrono::system_clock::from_time_t(std::abs(s));
+	const long int s = std::strtol(str, nullptr, 10);
+	return std::chrono::system_clock::from_time_t(std::abs(s));
 }
 
 /**
@@ -94,14 +94,14 @@ inline const static std::chrono::system_clock::time_point string_to_time_point(c
  */
 inline const static string read_file_as_text(const string& path)
 {
-    std::ifstream fs(path);
-    if (!fs.good())
-    {
-        return "";
-    }
-    std::stringstream buffer;
-    buffer << fs.rdbuf();
-    return buffer.str();
+	std::ifstream fs(path);
+	if (!fs.good())
+	{
+		return "";
+	}
+	std::stringstream buffer;
+	buffer << fs.rdbuf();
+	return buffer.str();
 }
 
 /**
@@ -111,34 +111,34 @@ inline const static string read_file_as_text(const string& path)
  */
 inline const static string extract_pub_key_from_private_pem(const string& pem)
 {
-    if (pem.empty())
-    {
-        return "";
-    }
+	if (pem.empty())
+	{
+		return "";
+	}
 
-    BIO* bio = BIO_new(BIO_s_mem());
-    BIO_write(bio, pem.c_str(), pem.size());
+	BIO* bio = BIO_new(BIO_s_mem());
+	BIO_write(bio, pem.c_str(), pem.size());
 
-    EVP_PKEY* pkey = nullptr;
-    PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);
+	EVP_PKEY* pkey = nullptr;
+	PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);
 
-    if (pkey == nullptr)
-    {
-        return "";
-    }
+	if (pkey == nullptr)
+	{
+		return "";
+	}
 
-    char* tmp_path = std::tmpnam(nullptr);
-    FILE* tmp_file = fopen(tmp_path, "wb");
+	char* tmp_path = std::tmpnam(nullptr);
+	FILE* tmp_file = fopen(tmp_path, "wb");
 
-    PEM_write_PUBKEY(tmp_file, pkey);
+	PEM_write_PUBKEY(tmp_file, pkey);
 
-    std::fclose(tmp_file);
-    string out = read_file_as_text(tmp_path);
+	std::fclose(tmp_file);
+	string out = read_file_as_text(tmp_path);
 
-    remove(tmp_path);
-    BIO_free(bio);
-    EVP_PKEY_free(pkey);
-    return out;
+	remove(tmp_path);
+	BIO_free(bio);
+	EVP_PKEY_free(pkey);
+	return out;
 }
 
 /**
@@ -149,14 +149,12 @@ inline const static string extract_pub_key_from_private_pem(const string& pem)
  */
 const void finalize(const string& jwt, const bool& copy)
 {
-    cout << endl << jwt << endl;
-    if (copy)
-    {
-        clipboard_c* c = clipboard_new(nullptr);
-        clipboard_clear(c, clipboard_mode::LCB_CLIPBOARD);
-        clipboard_set_text(c, jwt.c_str());
-        clipboard_free(c);
-    }
+	cout << endl << jwt << endl;
+	if (copy)
+	{
+		clip::clear();
+		clip::set_text(jwt);
+	}
 }
 
 /**
@@ -167,217 +165,222 @@ const void finalize(const string& jwt, const bool& copy)
  */
 int main(int argc, char** argv)
 {
-    argc -= (argc > 0);
-    argv += (argc > 0); // skip program name argv[0] if present.
+	argc -= (argc > 0);
+	argv += (argc > 0); // skip program name argv[0] if present.
 
-    using option::Stats;
-    using option::Option;
-    using option::Parser;
+	using option::Stats;
+	using option::Option;
+	using option::Parser;
 
-    Stats stats(usage, argc, argv);
-    Option options[stats.options_max], buffer[stats.buffer_max];
-    Parser parser(usage, argc, argv, options, buffer);
+	const Stats stats(usage, argc, argv);
 
-    if (parser.error())
-    {
-        cout << "\nERROR: Failed to parse jwtgen command line arguments.";
-        return 1;
-    }
+	Option* const buffer = new Option[stats.buffer_max];
+	Option* const options = new Option[stats.options_max];
 
-    if (options[HELP] || argc == 0)
-    {
-        option::printUsage(cout, usage);
-        return 0;
-    }
+	Parser parser(usage, argc, argv, options, buffer);
 
-    for (const Option* opt = options[UNKNOWN]; opt; opt = opt->next())
-    {
-        cout << "Unknown option: " << opt->name << "\n";
-    }
+	delete[] buffer, options;
 
-    jwt::builder token = jwt::create();
+	if (parser.error())
+	{
+		cout << "\nERROR: Failed to parse jwtgen command line arguments.";
+		return 1;
+	}
 
-    const Option* iss = options[ISS];
-    if (iss != nullptr)
-    {
-        if (iss->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one issuer. Only one issuer per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_issuer(iss->arg);
-    }
+	if (options[HELP] || argc == 0)
+	{
+		option::printUsage(cout, usage);
+		return 0;
+	}
 
-    const Option* sub = options[SUB];
-    if (sub != nullptr)
-    {
-        if (sub->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one subject. Only one --sub per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_subject(sub->arg);
-    }
+	for (const Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+	{
+		cout << "Unknown option: " << opt->name << "\n";
+	}
 
-    const Option* aud = options[AUD];
-    if (aud != nullptr)
-    {
-        if (aud->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one audience argument. Only one --aud per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_audience(aud->arg);
-    }
+	jwt::builder token = jwt::create();
 
-    const Option* exp = options[EXP];
-    if (exp != nullptr)
-    {
-        if (exp->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one expiration datetime. Only one --exp argument per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_expires_at(string_to_time_point(exp->arg));
-    }
+	const Option* iss = options[ISS];
+	if (iss != nullptr)
+	{
+		if (iss->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one issuer. Only one issuer per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_issuer(iss->arg);
+	}
 
-    const Option* iat = options[IAT];
-    if (iat != nullptr)
-    {
-        if (iat->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one issued-at datetime. Only one --iat argument per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_issued_at(string_to_time_point(iat->arg));
-    }
-    else
-    {
-        token.set_issued_at(std::chrono::system_clock::now());
-    }
+	const Option* sub = options[SUB];
+	if (sub != nullptr)
+	{
+		if (sub->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one subject. Only one --sub per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_subject(sub->arg);
+	}
 
-    const Option* nbf = options[NBF];
-    if (nbf != nullptr)
-    {
-        if (nbf->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one not-before (nbf) datetime. Only one --nbf argument per jwt is allowed!\n";
-            return 2;
-        }
-        token.set_not_before(string_to_time_point(nbf->arg));
-    }
+	const Option* aud = options[AUD];
+	if (aud != nullptr)
+	{
+		if (aud->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one audience argument. Only one --aud per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_audience(aud->arg);
+	}
 
-    for (const Option* opt = options[CLAIM]; opt; opt = opt->next())
-    {
-        const string& claim(opt->arg);
-        if (claim.empty())
-        {
-            cout << "WARNING: One or more claims were left empty (--claim= )";
-            continue;
-        }
+	const Option* exp = options[EXP];
+	if (exp != nullptr)
+	{
+		if (exp->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one expiration datetime. Only one --exp argument per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_expires_at(string_to_time_point(exp->arg));
+	}
 
-        const vector<string>& kvp = split(claim, ':');
-        if (kvp.size() != 2)
-        {
-            cout << "ERROR: Invalid claim argument \"" << claim << "\" - please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces! No weird characters!";
-            return 2;
-        }
+	const Option* iat = options[IAT];
+	if (iat != nullptr)
+	{
+		if (iat->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one issued-at datetime. Only one --iat argument per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_issued_at(string_to_time_point(iat->arg));
+	}
+	else
+	{
+		token.set_issued_at(std::chrono::system_clock::now());
+	}
 
-        if (kvp[0].empty() || kvp[1].empty())
-        {
-            cout << "ERROR: Invalid claim argument \"" << claim << "\" - claim name or claim value is an empty string. Please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon delimiter is important. No spaces! No weird characters!";
-            return 2;
-        }
+	const Option* nbf = options[NBF];
+	if (nbf != nullptr)
+	{
+		if (nbf->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one not-before (nbf) datetime. Only one --nbf argument per jwt is allowed!\n";
+			return 2;
+		}
+		token.set_not_before(string_to_time_point(nbf->arg));
+	}
 
-        token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
-    }
+	for (const Option* opt = options[CLAIM]; opt; opt = opt->next())
+	{
+		const string& claim(opt->arg);
+		if (claim.empty())
+		{
+			cout << "WARNING: One or more claims were left empty (--claim= )";
+			continue;
+		}
 
-    const bool& copy = options[COPY];
-    const Option* key = options[KEY];
+		const vector<string>& kvp = split(claim, ':');
+		if (kvp.size() != 2)
+		{
+			cout << "ERROR: Invalid claim argument \"" << claim << "\" - please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon : delimiter is important. No spaces! No weird characters!";
+			return 2;
+		}
 
-    if (key == nullptr || key->arg == nullptr)
-    {
-        cout << "WARNING: No signing key specified; encoding jwt without signing it. Are you sure that this is what you want?";
-        finalize(token.sign(jwt::algorithm::none()), copy);
-        return 0;
-    }
+		if (kvp[0].empty() || kvp[1].empty())
+		{
+			cout << "ERROR: Invalid claim argument \"" << claim << "\" - claim name or claim value is an empty string. Please use the correct syntax:  --claim=CLAIM_NAME:CLAIM_VALUE   the colon delimiter is important. No spaces! No weird characters!";
+			return 2;
+		}
 
-    const Option* alg = options[ALG];
-    if (alg == nullptr)
-    {
-        cout << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.\nIf you passed an RSA key file path into the key argument: please also specify the algorithm to use (otherwise the path string itself is used as a secret for the HS256 algo).";
-        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), copy);
-        return 0;
-    }
+		token.set_payload_claim(kvp[0], jwt::claim(kvp[1]));
+	}
 
-    string alg_name(alg->arg);
-    for (char& c : alg_name)
-    {
-        c = toupper(c);
-    }
-    if (alg_name.empty())
-    {
-        cout << "ERROR: The passed algorithm name argument is empty.";
-        return 2;
-    }
+	const bool& copy = options[COPY];
+	const Option* key = options[KEY];
 
-    if (alg_name == "HS256")
-    {
-        finalize(token.sign(jwt::algorithm::hs256 {key->arg}), copy);
-        return 0;
-    }
+	if (key == nullptr || key->arg == nullptr)
+	{
+		cout << "WARNING: No signing key specified; encoding jwt without signing it. Are you sure that this is what you want?";
+		finalize(token.sign(jwt::algorithm::none()), copy);
+		return 0;
+	}
 
-    if (alg_name == "HS384")
-    {
-        finalize(token.sign(jwt::algorithm::hs384 {key->arg}), copy);
-        return 0;
-    }
+	const Option* alg = options[ALG];
+	if (alg == nullptr)
+	{
+		cout << "WARNING: You specified a secret HMACSHA signing key but did not specify which HMACSHA variant to use; used default value of HS256.\nIf you passed an RSA key file path into the key argument: please also specify the algorithm to use (otherwise the path string itself is used as a secret for the HS256 algo).";
+		finalize(token.sign(jwt::algorithm::hs256{ key->arg }), copy);
+		return 0;
+	}
 
-    if (alg_name == "HS512")
-    {
-        finalize(token.sign(jwt::algorithm::hs512 {key->arg}), copy);
-        return 0;
-    }
+	string alg_name(alg->arg);
+	for (char& c : alg_name)
+	{
+		c = toupper(c);
+	}
+	if (alg_name.empty())
+	{
+		cout << "ERROR: The passed algorithm name argument is empty.";
+		return 2;
+	}
 
-    const string& pem = read_file_as_text(key->arg);
-    const Option* pw = options[PW];
-    string pw_str;
+	if (alg_name == "HS256")
+	{
+		finalize(token.sign(jwt::algorithm::hs256{ key->arg }), copy);
+		return 0;
+	}
 
-    if (pw != nullptr)
-    {
-        if (pw->count() > 1)
-        {
-            cout << "\nERROR: You passed more than one RSA key password. Only one --pw argument per jwt is allowed!\n";
-            return 2;
-        }
-        pw_str = string(pw->arg);
-    }
+	if (alg_name == "HS384")
+	{
+		finalize(token.sign(jwt::algorithm::hs384{ key->arg }), copy);
+		return 0;
+	}
 
-    if (pem.empty())
-    {
-        cout << "ERROR: The specified signing key file does not exist or couldn't be read: " << key->arg;
-        return 2;
-    }
+	if (alg_name == "HS512")
+	{
+		finalize(token.sign(jwt::algorithm::hs512{ key->arg }), copy);
+		return 0;
+	}
 
-    if (alg_name == "RS256")
-    {
-        finalize(token.sign(jwt::algorithm::rs256(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
-        return 0;
-    }
+	const string& pem = read_file_as_text(key->arg);
+	const Option* pw = options[PW];
+	string pw_str;
 
-    if (alg_name == "RS384")
-    {
-        finalize(token.sign(jwt::algorithm::rs384(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
-        return 0;
-    }
+	if (pw != nullptr)
+	{
+		if (pw->count() > 1)
+		{
+			cout << "\nERROR: You passed more than one RSA key password. Only one --pw argument per jwt is allowed!\n";
+			return 2;
+		}
+		pw_str = string(pw->arg);
+	}
 
-    if (alg_name == "RS512")
-    {
-        finalize(token.sign(jwt::algorithm::rs512(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
-        return 0;
-    }
+	if (pem.empty())
+	{
+		cout << "ERROR: The specified signing key file does not exist or couldn't be read: " << key->arg;
+		return 2;
+	}
 
-    cout << "ERROR: The passed algorithm type \"" << alg_name << "\"is not valid";
-    return 2;
+	if (alg_name == "RS256")
+	{
+		finalize(token.sign(jwt::algorithm::rs256(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+		return 0;
+	}
+
+	if (alg_name == "RS384")
+	{
+		finalize(token.sign(jwt::algorithm::rs384(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+		return 0;
+	}
+
+	if (alg_name == "RS512")
+	{
+		finalize(token.sign(jwt::algorithm::rs512(extract_pub_key_from_private_pem(pem), pem, "", pw_str)), copy);
+		return 0;
+	}
+
+	cout << "ERROR: The passed algorithm type \"" << alg_name << "\"is not valid";
+	return 2;
 }
 

@@ -13,15 +13,25 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 include(FindPkgConfig)
 
-# OpenSSL (see FindEmbeddedOpenSSL.cmake for more details)
-find_package(EmbeddedOpenSSL REQUIRED)
-include_directories(${EmbeddedOpenSSL_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${EmbeddedOpenSSL_LIB})
+# Cross-Platform Clipboard Library
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/clip)
 
-# Link cross-platform clipboard library
-find_package(EmbeddedClipboard REQUIRED)
-include_directories(${EmbeddedClipboard_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${EmbeddedClipboard_LIB})
+if(WIN32)
+	set(CLIP_LIB ${CMAKE_SOURCE_DIR}/dependencies/clip/windows-x86_64/clip.lib)
+elseif(UNIX AND NOT APPLE)
+	set(CLIP_LIB ${CMAKE_SOURCE_DIR}/dependencies/clip/linux-x86_64/clip.a)
+elseif(APPLE)
+	set(CLIP_LIB ${CMAKE_SOURCE_DIR}/dependencies/clip/darwin-x86_64/clip.a)
+else()
+	message("ERROR: Clipboard library not found for this platform! Please build jwtgen from either Windows, Linux or Apple macOS (all 64-bit only).")
+endif()
+
+target_link_libraries(${PROJECT_NAME} ${CLIP_LIB})
+
+# OpenSSL (see FindEmbeddedOpenSSL.cmake for more details)
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 
 # jwt-cpp (cross-platform, header-only)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/jwt-cpp/include)

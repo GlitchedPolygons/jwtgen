@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # The Lean Mean C++ command line arguments parser
 # https://sourceforge.net/projects/optionparser/
-include_directories(${CMAKE_CURRENT_LIST_DIR}/dependencies/optionparser)
+include_directories(include ${CMAKE_CURRENT_LIST_DIR}/dependencies/optionparser)
 
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SRC_FILES ${SRC_DIR}/main.cpp)

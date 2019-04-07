@@ -3,7 +3,6 @@
 #include <iostream>
 #include <openssl/rsa.h>
 #include "jwt-cpp/jwt.h"
-#include "clip.h"
 #include "optionparser.h"
 #include <Windows.h>
 enum optionIndex

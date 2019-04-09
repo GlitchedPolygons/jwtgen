@@ -1,6 +1,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#if _WIN32
+#include <openssl/applink.c>
+#endif
 #include <openssl/rsa.h>
 #include "jwt-cpp/jwt.h"
 #include "optionparser.h"

@@ -94,6 +94,7 @@ sudo make install
 ### Build jwtgen
 
 * Make sure you have CMake installed on your system (either build it from source and add it to your environment's path or use pre-built binaries).
+* Open `cmd.exe` and navigate to a folder where you want jwtgen to clone into.
 * `git clone https://github.com/GlitchedPolygons/jwtgen`
 * `cd jwtgen`
 * `mkdir build && cd build`

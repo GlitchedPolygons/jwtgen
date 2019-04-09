@@ -53,7 +53,7 @@ Jwtgen is a quick and lightweight jwt generator (console-only). You give it your
 * [CMake](https://cmake.org/) >3.10
 * [OpenSSL](https://github.com/openssl/openssl/) [>1.1.1c](https://github.com/openssl/openssl/tree/OpenSSL_1_1_1-stable)
 
-Note: I included a .zip with pre-built OpenSSL binaries inside `dependencies/openssl` if you don't wanna build it on your own. Check out the README.md inside that folder for more information.
+Note: I included a .zip with pre-built OpenSSL binaries inside `dependencies/openssl` if you don't wanna build it on your own. Check out the [README.md](https://github.com/GlitchedPolygons/jwtgen/tree/master/dependencies/openssl) inside that folder for more information.
 
 #### Building OpenSSL from source
 

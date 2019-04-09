@@ -2,12 +2,12 @@
 
 ## Installation paths are as follows:
 
-### Extract the archive's content into the corresponding folder paths on your machine.
+### Extract the archive's content into the corresponding folder paths on your machine
 
 ---
 
 * Windows-x86_64  
-* * C:\Program Files\OpenSSL
+* * `C:\Program Files\OpenSSL`
 * Linux-x86_64 and Darwin-x86_64 (Apple macOS)
-* * Library directory: /usr/local/lib
-* * Include directory: /usr/local/include
+* * Library directory: `/usr/local/lib`
+* * Include directory: `/usr/local/include`

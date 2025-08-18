@@ -1,3 +1,11 @@
+> [!IMPORTANT]
+>
+> # **NOTICE:**
+>
+> ## Development of this project has been migrated to: https://codeberg.org/GlitchedPolygons/jwtgen
+>
+> ## All pull requests and issues on GitHub will be ignored from the 16th of August, 2025 onwards.
+
 # jwtgen
 
 ## What is it?
@@ -95,7 +103,7 @@ sudo make install
 
 * Make sure you have CMake installed on your system (either build it from source and add it to your environment's path or use pre-built binaries).
 * Open `cmd.exe` and navigate to a folder where you want jwtgen to clone into.
-* `git clone https://github.com/GlitchedPolygons/jwtgen`
+* `git clone https://codeberg.org/GlitchedPolygons/jwtgen`
 * `cd jwtgen`
 * `mkdir build && cd build`
 * `cmake ..`
